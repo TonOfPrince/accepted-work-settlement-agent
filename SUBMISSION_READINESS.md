@@ -11,17 +11,15 @@ Checked against the [PayPal AI Hackathon official rules](https://paypalaihackath
 - Deterministic receipt, settlement, AI, and HTTP flow tests passed.
 - Responsive interface checked on desktop and mobile.
 - README provides credential-free checks and interactive setup instructions.
-- Devpost project draft, technical explanation, and judge instructions are prepared.
+- Devpost technical explanation and judge instructions are complete.
 - Public 2:07 [YouTube demonstration](https://www.youtube.com/watch?v=KLLB8MnHQaQ), with Kokoro af_heart narration and actual approval-to-capture footage.
 - Public visibility, playback, HD processing, and no copyright issues verified in YouTube.
-- Video URL and all required personal and eligibility answers saved in the Devpost draft.
+- Video URL and all required personal and eligibility answers saved in Devpost.
 - Finite review of the public source, video, and completed draft passed.
 
-## Final gates
+## Submitted
 
-- Entrant accepts the official rules and submits the project.
-
-Until the final entrant gate is complete, this file does not claim that the project has been submitted.
+[Accepted Work Settlement Agent on Devpost](https://devpost.com/software/accepted-work-settlement-agent) was submitted to the PayPal AI Hackathon on October 9, 2026 after the entrant authorized acceptance of the official rules and Devpost terms. Devpost displayed “Project submitted!” and listed the hackathon under “Submitted to.”
 
 ## Limits
 
