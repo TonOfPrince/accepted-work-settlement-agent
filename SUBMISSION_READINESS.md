@@ -12,16 +12,16 @@ Checked against the [PayPal AI Hackathon official rules](https://paypalaihackath
 - Responsive interface checked on desktop and mobile.
 - README provides credential-free checks and interactive setup instructions.
 - Devpost project draft, technical explanation, and judge instructions are prepared.
+- Public 2:07 [YouTube demonstration](https://www.youtube.com/watch?v=KLLB8MnHQaQ), with Kokoro af_heart narration and actual approval-to-capture footage.
+- Public visibility, playback, HD processing, and no copyright issues verified in YouTube.
+- Video URL and all required personal and eligibility answers saved in the Devpost draft.
+- Finite review of the public source, video, and completed draft passed.
 
 ## Final gates
 
-- Demonstration video under three minutes showing the working flow, with Kokoro af_heart narration.
-- Public YouTube video URL saved to the draft.
-- Remaining submitter, personal feedback, and eligibility fields completed truthfully.
-- Finite final review of source, video, and full draft.
 - Entrant accepts the official rules and submits the project.
 
-Until these final gates are complete, this file does not claim that the project has been submitted.
+Until the final entrant gate is complete, this file does not claim that the project has been submitted.
 
 ## Limits
 

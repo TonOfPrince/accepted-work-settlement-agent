@@ -6,6 +6,10 @@ Built for small agencies and teams commissioning AI-assisted deliverables: a con
 
 This is a working, sandbox-only prototype for the PayPal AI Hackathon. It uses a local AI model and PayPal Orders v2. No paid model API, cloud deployment, or real payment is required.
 
+## Watch the working demo
+
+[Watch the 2:07 narrated demonstration on YouTube](https://www.youtube.com/watch?v=KLLB8MnHQaQ). It shows the actual USD 80.00 Sandbox approval-to-capture transition, with Kokoro narration. Work evidence is synthetic and all funds are fictitious.
+
 ## Try the credential-free checks
 
 Requires **Node.js 22.16 or newer** and npm. There are no package dependencies to install.
