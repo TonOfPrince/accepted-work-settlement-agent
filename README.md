@@ -1,201 +1,85 @@
 # Accepted Work Settlement Agent
 
-A self-contained contest slice for the PayPal AI Hackathon.
+**Pay independently accepted work through PayPal, with AI routing and an exact payment boundary.**
 
-## Outcome
+Built for small agencies and teams commissioning AI-assisted deliverables: a conversational request selects which accepted work to pay, while deterministic evidence fixes whether payment is allowed and how much is owed.
 
-Prove one narrow agentic-commerce loop:
+This is a working, sandbox-only prototype for the PayPal AI Hackathon. It uses a local AI model and PayPal Orders v2. No paid model API, cloud deployment, or real payment is required.
+
+## Try the credential-free checks
+
+Requires **Node.js 22.16 or newer** and npm. There are no package dependencies to install.
+
+Download the public source, open a terminal in its directory, and run:
+
+```bash
+npm run preflight:judge
+```
+
+Expected results: 9 accepted-receipt checks, 8 settlement checks, 7 AI-routing checks, a passing HTTP redirect/capture test, a synthetic CAPTURED result, and a passing public-export check. The preflight uses scripted AI and a synthetic payment transport; it does not call PayPal or a model server.
+
+## Run the interactive AI + PayPal Sandbox flow
+
+1. Have Ollama running locally with `llama3.2` available. The verified run used `llama3.2:latest`. An equivalent local OpenAI-compatible chat endpoint also works.
+2. In the [PayPal Developer dashboard](https://developer.paypal.com/dashboard/), use a **Sandbox** app's client ID and secret. Use a separate sandbox personal buyer account for approval.
+3. Copy `.env.example` to `.env`, fill in only your own sandbox credentials, and set both network flags to `1` for this test.
+4. Start the server:
+
+```bash
+node --env-file=.env --experimental-strip-types server.ts --serve
+```
+
+5. Open [http://127.0.0.1:8787](http://127.0.0.1:8787). Enter `Settle the accepted work for job_demo_002`, then choose **Ask AI, then open PayPal**.
+6. Review and approve the **USD 80.00 fictitious sandbox payment** in PayPal. The app returns a completed receipt with the work, settlement, order, and capture identifiers.
+
+Keep the same process running through approval and capture. The prototype stores state in memory. Restarting starts a fresh demo session.
+
+Never use live PayPal credentials. Keep `.env` private. The transport is pinned to `https://api-m.sandbox.paypal.com` and has no production fallback. To view the interface without external calls, leave both network flags at `0`; attempting checkout then fails closed.
+
+## What the AI does
+
+The local model maps the user's request to one exact settlement identifier from a server-generated allowlist of receipts that are ready for an order. It cannot create acceptance evidence, change an amount, invent a settlement, or authorize capture.
+
+Deterministic code checks readiness again before creating the PayPal order. PayPal handles buyer approval. The app validates the returned order token against the settlement before capture.
+
+## Why acceptance comes first
+
+The receipt adapter requires an accepted artifact with matching identity, digest, and version; cleared blocking inputs and unresolved unknowns; and exactly one passing independent review bound to the artifact. The payment amount is explicit.
+
+The demonstration uses synthetic accepted-work evidence to make the boundary reproducible. It does not claim that an actual customer commissioned these sample packages.
 
 ```text
-natural-language settlement request
-  -> local AI selects one server-authorized accepted receipt
-  -> deterministic settlement receipt
-  -> PayPal sandbox order
-  -> buyer approval
-  -> capture
-  -> settlement result
+natural-language request
+  → AI selects an eligible receipt
+  → deterministic acceptance and amount checks
+  → PayPal Sandbox order
+  → buyer approval
+  → bound return-token validation
+  → capture and receipt
 ```
 
-The important product behavior is the **acceptance gate**: payment cannot begin
-until a bounded work packet has an independently accepted artifact. A local
-OpenAI-compatible model can route a natural-language request to one of the
-server-enumerated accepted receipts, but it cannot invent or modify a receipt,
-amount, acceptance result, settlement identity, or capture state. Deterministic
-code remains the payment authority.
+## Verified behavior
 
-This demo copies only that public semantic contract. It does **not** import
-any private orchestration/runtime implementation.
+On October 9, 2026, local `llama3.2:latest` selected the USD 80.00 receipt, buyer approval completed, and a separate PayPal Orders v2 readback confirmed both the order and capture as `COMPLETED`. These were fictitious funds, not revenue.
 
-## Why this is isolated
+Tests reject hallucinated settlement identifiers without creating an order, reject mismatched return tokens, preserve capture idempotency within the process, rotate the order attempt after cancellation, and exclude captured receipts from later AI choices. HTML output escapes dynamic values.
 
-The hackathon requires a functional public open-source repository at submission
-time. Any eventual public contest repository should contain only the disposable
-demo implementation and its setup instructions, not reusable private
-control-plane or orchestration IP.
+## Implementation
 
-This directory is not published or submitted by creating it.
+| File | Role |
+| --- | --- |
+| `agent.ts` | Bounded AI routing and loopback-only model adapter |
+| `awx-receipt.ts` | Accepted-work evidence adapter |
+| `settlement.ts` | Receipt identity, state machine, PayPal Sandbox REST transport |
+| `server.ts` | Responsive UI, approval redirect, return validation, capture |
+| `*-test.ts` | Deterministic tests |
+| `demo.ts` | No-network synthetic walkthrough |
+| `verify-public-export.mjs` | Standalone source and export check |
 
-## Current slice
+## Scope and limits
 
-`agent.ts` contains:
+This prototype demonstrates one settlement boundary. It does not provide durable storage, concurrent transaction locking, live payments, production authentication, or autonomous buyer approval. The buyer remains in control of the PayPal approval step. Production use would require durable state, reconciliation, and further validation.
 
-- a bounded natural-language settlement router over an explicit allowlist of
-  already-accepted receipts;
-- a dependency-free OpenAI-compatible chat adapter restricted to loopback
-  endpoints such as `http://127.0.0.1:11434/v1`;
-- network-off-by-default behavior;
-- strict JSON action parsing and fail-closed rejection of malformed output,
-  unsupported actions, or hallucinated settlement ids.
+## License
 
-`awx-receipt.ts` composes the public Agent Work Exchange COMPLETE-envelope semantics into the standalone settlement receipt. It requires one accepted artifact, matching id/digest/version in the result deliverable, cleared unresolved unknowns, PASS/WAIVED acceptance, no blocking input, and exactly one passing independent review bound to that artifact. Settlement amount remains explicit and is never inferred.
-
-`settlement.ts` contains:
-
-- deterministic settlement identity bound to job, work packet, artifact digest,
-  reviewer evidence, and exact amount;
-- fail-closed acceptance and unresolved-unknown gates;
-- idempotent PayPal order creation and capture, with a fresh order attempt after buyer cancellation;
-- a deterministic synthetic PayPal transport for zero-effect testing;
-- an env-gated **sandbox-only** REST transport;
-- PayPal Orders v2 request shaping with `CAPTURE` intent and
-  `PayPal-Request-Id` idempotency keys.
-
-The REST transport has no production endpoint. Network calls are disabled unless
-the caller explicitly passes `allowNetwork: true`. The CLI demo is synthetic-only and never contacts PayPal. The real sandbox path
-is exclusively `server.ts`, which requires `PAYPAL_ALLOW_NETWORK=1` plus
-sandbox credentials and sends the buyer through PayPal approval before capture.
-
-## Run without any external effect
-
-Requires Node 22.16+.
-
-```bash
-npm test
-npm run demo
-```
-
-The default demo starts from a synthetic public AWX COMPLETE status envelope, converts it through `awx-receipt.ts`, and then uses only `SyntheticPayPalTransport`.
-
-The test suite also exercises the AI router with a scripted local model, so no
-model server or external account is required for deterministic CI/local tests.
-
-## Local AI + PayPal sandbox mode
-
-The AI adapter itself is designed for a local OpenAI-compatible endpoint. To
-enable it in the interactive server, set a local model name and explicitly
-allow loopback model calls:
-
-```bash
-AI_MODEL=your-local-model \
-AI_BASE_URL=http://127.0.0.1:11434/v1 \
-AI_ALLOW_NETWORK=1 \
-PAYPAL_SANDBOX_CLIENT_ID=... \
-PAYPAL_SANDBOX_CLIENT_SECRET=... \
-PAYPAL_ALLOW_NETWORK=1 \
-npm run serve
-```
-
-The model sees only the user's request plus server-generated candidate summaries for settlements that are currently `READY_FOR_ORDER`. Its output must select one exact candidate settlement id. The server rechecks `READY_FOR_ORDER` immediately before PayPal order creation; captured or already-open orders are not re-offered. PayPal order creation still comes from the corresponding deterministic accepted receipt, and capture still requires the PayPal buyer-return token.
-
-## PayPal sandbox mode
-
-Use only your own authorized PayPal developer sandbox credentials.
-
-```bash
-PAYPAL_SANDBOX_CLIENT_ID=... \
-PAYPAL_SANDBOX_CLIENT_SECRET=... \
-PAYPAL_ALLOW_NETWORK=1 \
-npm run serve
-```
-
-The implementation is pinned to:
-
-```text
-https://api-m.sandbox.paypal.com
-```
-
-There is deliberately no production fallback.
-
-## Test contract
-
-`settlement-test.ts` checks:
-
-1. accepted work can create and capture a synthetic PayPal order;
-2. replayed open/create/capture operations remain idempotent;
-3. failed acceptance, unresolved unknowns, and bad artifact digests fail closed;
-4. the PayPal Orders payload is bound to the accepted job and settlement id;
-5. disabled sandbox networking cannot call `fetch`;
-6. capture cannot happen before order creation;
-7. the sandbox REST adapter requests a full capture representation and extracts
-   the actual captured-payment ID from `purchase_units[].payments.captures[]`,
-   not the top-level order ID;
-8. buyer cancellation resets the settlement to a new PayPal order attempt with
-   a new idempotency key rather than trapping retries on the canceled order.
-
-## Verified sandbox demonstration
-
-On October 9, 2026, a local `llama3.2:latest` model selected the authorized
-USD 80.00 receipt. PayPal Sandbox buyer approval and capture completed, and an
-independent Orders v2 API readback confirmed both the order and capture as
-`COMPLETED`. These were fictitious sandbox funds, not revenue.
-
-## License and submission status
-
-This isolated demo is released under the MIT license; see `LICENSE`.
-Registration and a live sandbox round-trip are complete. The public video and
-final hackathon submission are in preparation. No production payment is part
-of this demo.
-
-## Local buyer-approval loop
-
-`server.ts` adds a dependency-free local redirect flow:
-
-```text
-POST /start
-  -> create sandbox order with return/cancel URLs
-  -> 303 to PayPal payer-action URL
-  -> buyer approves in PayPal sandbox
-  -> GET /paypal/return?token=<order>
-  -> verify token matches the bound settlement
-  -> capture
-```
-
-Run it only after sandbox credential/network use is authorized:
-
-```bash
-PAYPAL_SANDBOX_CLIENT_ID=... \
-PAYPAL_SANDBOX_CLIENT_SECRET=... \
-PAYPAL_ALLOW_NETWORK=1 \
-npm run serve
-```
-
-Then open `http://127.0.0.1:8787`.
-
-`server-test.ts` uses an in-process fake transport and local HTTP only. It
-checks the redirect payload, exact return/cancel URLs, mismatched/old
-order-token rejection, cancel-and-retry order rotation, idempotent capture
-replay, successful capture rendering, and state-aware cancel behavior after
-capture. The current demo is intentionally in-memory; restart persistence is
-not claimed by this isolated publicable slice.
-
-## Public-export preflight
-
-Before any future publication, run:
-
-```bash
-npm run verify:public
-```
-
-The verifier checks that this slice has no parent-directory imports, no absolute
-imports, no local/workspace package dependencies, and no confidential internal
-system name in export member paths or readable file bytes (including metadata).
-The check scans the standalone directory, not compressed archive contents; inspect
-any later packaged export separately. A missing `LICENSE` is reported as an explicit
-publication gate rather than silently choosing a license.
-
-`SUBMISSION_READINESS.md` records the current Devpost requirements, human
-approval gates, and a sub-three-minute demo spine. It is preparation only and
-does not publish or submit anything.
-
-The live local-AI -> PayPal sandbox buyer-approval -> capture round-trip has
-been verified. The public source is MIT licensed. A short video demonstration is in preparation.
+MIT. See [LICENSE](LICENSE).
