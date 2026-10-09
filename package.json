@@ -1,0 +1,20 @@
+{
+  "name": "paypal-agentic-commerce-demo",
+  "private": true,
+  "version": "0.3.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "test:settlement": "node --experimental-strip-types settlement-test.ts",
+    "test:server": "node --experimental-strip-types server-test.ts",
+    "test": "npm run test:awx-receipt && npm run test:settlement && npm run test:agent && npm run test:server",
+    "demo": "node --experimental-strip-types demo.ts",
+    "serve": "node --experimental-strip-types server.ts --serve",
+    "verify:public": "node verify-public-export.mjs",
+    "test:agent": "node --experimental-strip-types agent-test.ts",
+    "test:awx-receipt": "node --experimental-strip-types awx-receipt-test.ts",
+    "preflight:judge": "npm test && npm run demo && npm run verify:public"
+  }
+}
